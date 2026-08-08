@@ -20,7 +20,10 @@ RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q -DskipTests package
 
-FROM eclipse-temurin:17-jre-alpine
+# 21-jre-alpine, not 17: Temurin's Alpine images ship arm64 only from
+# JDK 21 (17-jre-alpine is amd64-only and breaks the multi-arch release
+# build). The jar still targets Java 17 bytecode (see pom.xml).
+FROM eclipse-temurin:21-jre-alpine
 
 # graphviz: layout engine (EPL-1.0, invoked as external process)
 # fontconfig + ttf-dejavu: fonts for headless text rendering
