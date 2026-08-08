@@ -19,23 +19,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
           cache: maven
 
-      - name: Maven build
-        run: mvn -q -DskipTests package
+      - name: Maven build and test
+        run: mvn -q package
 
       - name: Docker build (single arch, no push)
         run: docker build -t plantuml-mcp:ci .
 
-      - name: Smoke test - render a diagram in the container
-        run: |
-          printf '@startuml\nAlice -> Bob : hello\n@enduml\n' > smoke.puml
-          docker run --rm -i --entrypoint java plantuml-mcp:ci \
-            -Djava.awt.headless=true \
-            -cp /opt/plantuml-mcp/plantuml-mcp.jar \
-            net.sourceforge.plantuml.Run -tsvg -charset UTF-8 -pipe < smoke.puml > smoke.svg
-          grep -q "<svg" smoke.svg
+      - name: Acceptance tests (EARS requirements, see test/ACCEPTANCE.md)
+        run: IMAGE=plantuml-mcp:ci bash test/acceptance-test.sh | tee acceptance-tap.txt
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            acceptance-tap.txt
+            test/RESULTS.md

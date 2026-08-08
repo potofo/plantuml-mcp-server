@@ -144,6 +144,19 @@ skinparam defaultFontName "Noto Sans CJK JP"    ' ゴシック（既定のフォ
 
 要素別の指定（`titleFontName`、`actorFontName` など）も使えます。
 
+## セキュリティ
+
+- イメージには `PLANTUML_SECURITY_PROFILE=INTERNET` が設定されています。
+  PlantUML は `!include` の取得先として HTTP/HTTPS（ポート 80/443）に
+  アクセスできますが、**ローカルファイルは読み取れません**。URL include や
+  リモートテーマを使えるようにするための意図的なトレードオフです。
+  ネットワークアクセスを完全に無効化するには、環境変数を `SANDBOX` で
+  上書きしてください。
+- レンダリングには上限があります。ソースは 100,000 文字まで、1 リクエスト
+  あたり 60 秒でタイムアウトするため、異常なダイアグラムでサーバーが
+  ハングすることはありません。
+- コンテナは非 root ユーザー（uid 10001）で動作します。
+
 ## License
 
 PlantUML MCP Server

@@ -1,0 +1,272 @@
+app:
+  description: 'Docker MCP Gateway経由でPlantUML MCPサーバーを評価するためのサンプルチャットアプリです。作りたい図を自然言語（日本語）で説明すると、エージェントがPlantUMLソースを生成し、MCPツール
+    render_png（既定）/ render_svg でPNGまたはSVGにレンダリングして返します。シーケンス図・クラス図・ユースケース図・アクティビティ図・状態遷移図・コンポーネント図・ER図・ガントチャート・マインドマップなどに対応。レンダリングエラー時はエラーメッセージを読み取ってソースを修正し、最大3回まで自動リトライします。'
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  icon_type: emoji
+  mode: advanced-chat
+  name: plantuml-mit eval
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - remote_url
+      - local_file
+      enabled: true
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      number_limits: 3
+    opening_statement: 'こんにちは！PlantUML作図アシスタントです 📊
+
+
+      作りたい図の内容を日本語で説明していただければ、PlantUMLでダイアグラムを作成してSVG（またはPNG）でお返しします。
+
+
+      対応している図：シーケンス図・クラス図・ユースケース図・アクティビティ図・状態遷移図・コンポーネント図・ER図・ガントチャート・マインドマップ など
+
+
+      例：「ユーザーがログインしてトークンを受け取るまでのシーケンス図を作って」のように話しかけてください。図の種類を指定しなくても、内容から最適な形式を選びます。
+
+
+      ※現在、図の中のラベルは英語で生成されます（日本語フォント対応は準備中です）
+
+      '
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - ユーザーがログインして認証トークンを受け取るまでのシーケンス図を作って
+    - ECサイトの注文・支払い・配送のクラス図を作って
+    - 会員登録から退会までの状態遷移図を作って
+    - Webアプリの承認ワークフローをアクティビティ図にして
+    - ブログシステムのER図を作って（ユーザー、記事、コメント、タグ）
+    - マイクロサービス構成のコンポーネント図をPNGで作って
+    - 新機能リリースまでの2週間のガントチャートを作って
+    - 「プロジェクト管理」をテーマにマインドマップを作って
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: agent
+      id: 1786200670439-source-1786202014830-target
+      source: '1786200670439'
+      sourceHandle: source
+      target: '1786202014830'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: agent
+        targetType: answer
+      id: 1786202014830-source-answer-target
+      source: '1786202014830'
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: ユーザー入力
+        type: start
+        variables: []
+      height: 73
+      id: '1786200670439'
+      position:
+        x: 75.45285035682815
+        y: 261
+      positionAbsolute:
+        x: 75.45285035682815
+        y: 261
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: 'あなたはPlantUMLダイアグラム作成アシスタントです。ユーザーの指示から適切なPlantUMLソースを作成し、必ずツールでレンダリングして結果を返します。
+
+
+              ## ツールの使い分け（最重要）
+
+              - render_png: 【既定】図を作るときは常にこれを呼ぶ。返された画像は自動的に回答に添付される
+
+              - render_svg: ユーザーが「SVGで」と明示的に指定したときだけ使う
+
+
+              ## 手順
+
+              1. ユーザーの要望から図の種類を判断する（シーケンス図、クラス図、ユースケース図、アクティビティ図、状態遷移図、コンポーネント図、ER図、ガント、mindmap、JSON/YAML可視化など）
+
+              2. PlantUMLソースを作成する。必ず @startuml で始め @enduml で終える（JSONは @startjson、mindmapは
+              @startmindmap）
+
+              3. 【必須】render_png（SVG明示指定時のみrender_svg）を呼び出す。ソースを書くだけで終わることを禁止する
+
+              4. ツールがエラーを返したら、エラーメッセージ（行番号付き）を読んでソースを修正し再実行する。3回失敗したらエラー内容とソースを提示してユーザーに確認する
+
+
+              ## 作図ルール
+
+              - 図の種類が未指定なら内容から最適な種類を選び、選択理由を一言添える
+
+              - 指示が曖昧な部分は常識的に補い、補った箇所を回答で明示する
+
+              - ユーザーが日本語で依頼したら、ラベルも日本語で作成する（ゴシック=Noto Sans CJK と明朝=Noto Serif CJK
+              JP を同梱済み）。ユーザーが明朝体を求めたら skinparam defaultFontName "Noto Serif CJK JP"
+              をソース先頭に入れる
+
+              - ソースは100,000文字以内
+
+
+              ## 出力形式
+
+              - 回答本文には、説明とレンダリングに使ったPlantUMLソース（```plantuml コードブロック)を含める
+
+              - 画像はツール結果から自動で添付されるため、本文への埋め込み（![...](data:...) やBase64の書き写し）を禁止する
+
+              - render_svgを使った場合、SVGファイルは自動的に添付される。SVGの中身を本文に書き写すことは禁止する
+
+              '
+          model:
+            type: constant
+            value:
+              completion_params: {}
+              mode: chat
+              model: anthropic/claude-sonnet-4.6
+              model_type: llm
+              provider: langgenius/openrouter/openrouter
+              type: model-selector
+          query:
+            type: constant
+            value: '{{#sys.query#}}
+
+              {{#sys.files#}}'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: Render PlantUML source as PNG and return Base64.
+              parameters:
+                source:
+                  auto: 1
+                  value: null
+              plugin_id: ''
+              provider_name: mcp-gateway
+              provider_show_name: mcp-gateway
+              settings: {}
+              tool_description: Render PlantUML source as PNG and return Base64.
+              tool_label: render_png
+              tool_name: render_png
+              type: mcp
+            - enabled: true
+              extra:
+                description: Render PlantUML source as SVG.
+              parameters:
+                source:
+                  auto: 1
+                  value: null
+              plugin_id: ''
+              provider_name: mcp-gateway
+              provider_show_name: mcp-gateway
+              settings: {}
+              tool_description: Render PlantUML source as SVG.
+              tool_label: render_svg
+              tool_name: render_svg
+              type: mcp
+        agent_strategy_label: FunctionCalling
+        agent_strategy_name: function_calling
+        agent_strategy_provider_name: langgenius/agent/agent
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.42@2ae22966e893dced869cf04dba918eff6c14c05a3c3d7f04c2ed4f7da825b67f
+        selected: false
+        title: Agent
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: '1786202014830'
+      position:
+        x: 381
+        y: 282
+      positionAbsolute:
+        x: 381
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        answer: '{{#1786202014830.text#}}
+
+          {{#1786202014830.files#}}'
+        selected: false
+        title: 回答
+        type: answer
+        variables: []
+      height: 102
+      id: answer
+      position:
+        x: 679
+        y: 282
+      positionAbsolute:
+        x: 679
+        y: 282
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    viewport:
+      x: -28.106341701962037
+      y: 20.103860266558286
+      zoom: 1.3195079271274526
+  rag_pipeline_variables: []
