@@ -13,7 +13,7 @@
 
 # --platform=$BUILDPLATFORM: the jar is architecture-independent, so build it
 # once natively instead of under QEMU emulation for each target platform.
-FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-17 AS mcp-build
+FROM --platform=$BUILDPLATFORM maven:3-eclipse-temurin-26 AS mcp-build
 WORKDIR /build
 COPY pom.xml .
 RUN mvn -q -DskipTests dependency:go-offline
