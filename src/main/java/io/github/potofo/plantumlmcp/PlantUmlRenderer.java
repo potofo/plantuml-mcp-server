@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +44,12 @@ final class PlantUmlRenderer {
         thread.setDaemon(true);
         return thread;
     });
+
+    // The PlantUML core is not safe under concurrent rendering (concurrent
+    // first renders deadlock in its static/font initialization), so renders
+    // are serialized. Fair + interruptible: queued tasks keep FIFO order and
+    // can still be cancelled by the per-request timeout while waiting.
+    private final ReentrantLock renderLock = new ReentrantLock(true);
 
     String renderSvg(String source) throws IOException {
         return new String(render(source, FileFormat.SVG), StandardCharsets.UTF_8);
@@ -86,7 +93,17 @@ final class PlantUmlRenderer {
         }
     }
 
-    private byte[] doRender(String source, FileFormat format) throws IOException {
+    private byte[] doRender(String source, FileFormat format)
+            throws IOException, InterruptedException {
+        renderLock.lockInterruptibly();
+        try {
+            return doRenderLocked(source, format);
+        } finally {
+            renderLock.unlock();
+        }
+    }
+
+    private byte[] doRenderLocked(String source, FileFormat format) throws IOException {
         SourceStringReader reader = new SourceStringReader(source);
         List<BlockUml> blocks = reader.getBlocks();
         if (blocks.isEmpty()) {

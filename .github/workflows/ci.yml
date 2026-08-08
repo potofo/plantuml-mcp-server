@@ -31,11 +31,5 @@ jobs:
       - name: Docker build (single arch, no push)
         run: docker build -t plantuml-mcp:ci .
 
-      - name: Smoke test - render a diagram in the container
-        run: |
-          printf '@startuml\nAlice -> Bob : hello\n@enduml\n' > smoke.puml
-          docker run --rm -i --entrypoint java plantuml-mcp:ci \
-            -Djava.awt.headless=true \
-            -cp /opt/plantuml-mcp/plantuml-mcp.jar \
-            net.sourceforge.plantuml.Run -tsvg -charset UTF-8 -pipe < smoke.puml > smoke.svg
-          grep -q "<svg" smoke.svg
+      - name: Acceptance tests (EARS requirements, see test/ACCEPTANCE.md)
+        run: IMAGE=plantuml-mcp:ci bash test/acceptance-test.sh

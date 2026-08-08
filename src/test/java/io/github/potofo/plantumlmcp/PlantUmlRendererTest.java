@@ -69,6 +69,25 @@ class PlantUmlRendererTest {
     }
 
     @Test
+    void rendersConcurrentRequests() throws Exception {
+        // Regression test: concurrent first renders used to deadlock inside
+        // the PlantUML core; renders are now serialized by the renderer.
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(4);
+        try {
+            var futures = new java.util.ArrayList<java.util.concurrent.Future<String>>();
+            for (int i = 0; i < 4; i++) {
+                futures.add(executor.submit(() -> renderer.renderSvg(SEQUENCE)));
+            }
+            for (var future : futures) {
+                String svg = future.get(90, java.util.concurrent.TimeUnit.SECONDS);
+                assertTrue(svg.contains("<svg"));
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
     void rejectsMultipleDiagramBlocks() {
         String two = SEQUENCE + SEQUENCE;
         IllegalArgumentException e = assertThrows(
