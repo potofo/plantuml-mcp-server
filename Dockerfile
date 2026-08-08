@@ -20,7 +20,7 @@ RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q -DskipTests package
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 # graphviz: layout engine (EPL-1.0, invoked as external process)
 # fontconfig + ttf-dejavu: fonts for headless text rendering
