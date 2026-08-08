@@ -13,6 +13,8 @@ meta:
 about:
   title: PlantUML
   icon: https://avatars.githubusercontent.com/u/33107703?s=200&v=4
-  description: Render PlantUML source to SVG or PNG through Model Context Protocol.
+  description: >-
+    Render PlantUML source to SVG or PNG through Model Context Protocol.
+    Community project, not affiliated with or endorsed by the PlantUML project.
 source:
   project: https://github.com/potofo/plantuml-mcp-server

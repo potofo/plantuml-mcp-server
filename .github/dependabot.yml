@@ -12,6 +12,13 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    # The project deliberately targets Java 17 (LTS). Ignore major base-image
+    # bumps (new JDK majors); minor/patch and security updates still arrive.
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
+      - dependency-name: maven
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

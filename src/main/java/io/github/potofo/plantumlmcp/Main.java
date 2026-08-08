@@ -6,7 +6,7 @@
  * Licensed under the MIT License. See LICENSE.txt in the project root
  * for full license text.
  */
-package dev.example.plantumlmcp;
+package io.github.potofo.plantumlmcp;
 
 import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.server.McpServer;

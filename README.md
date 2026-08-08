@@ -148,6 +148,18 @@ skinparam defaultFontName "Noto Sans CJK JP"    ' gothic (default fallback)
 
 Per-element variants (`titleFontName`, `actorFontName`, ...) work as well.
 
+## Security
+
+- The image sets `PLANTUML_SECURITY_PROFILE=INTERNET`: PlantUML may fetch
+  `!include` targets over HTTP/HTTPS (ports 80/443) but **cannot read
+  local files**. This is a deliberate trade-off to keep URL includes and
+  remote themes working; override the environment variable with `SANDBOX`
+  to disable network access entirely.
+- Rendering is bounded: source is capped at 100,000 characters and each
+  render is aborted after 60 seconds, so a pathological diagram cannot
+  hang the server.
+- The container runs as a non-root user (uid 10001).
+
 ## License
 
 PlantUML MCP Server

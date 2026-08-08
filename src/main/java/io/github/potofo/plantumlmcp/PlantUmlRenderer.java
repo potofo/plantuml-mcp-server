@@ -6,7 +6,7 @@
  * Licensed under the MIT License. See LICENSE.txt in the project root
  * for full license text.
  */
-package dev.example.plantumlmcp;
+package io.github.potofo.plantumlmcp;
 
 import net.sourceforge.plantuml.BlockUml;
 import net.sourceforge.plantuml.FileFormat;
@@ -19,6 +19,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +35,14 @@ import java.util.stream.Collectors;
  */
 final class PlantUmlRenderer {
     private static final int MAX_SOURCE_LENGTH = 100_000;
+    private static final int RENDER_TIMEOUT_SECONDS = 60;
+
+    // Daemon threads: a runaway render must never block JVM shutdown.
+    private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
+        Thread thread = new Thread(runnable, "plantuml-render");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     String renderSvg(String source) throws IOException {
         return new String(render(source, FileFormat.SVG), StandardCharsets.UTF_8);
@@ -47,11 +61,42 @@ final class PlantUmlRenderer {
                 "source exceeds " + MAX_SOURCE_LENGTH + " characters");
         }
 
+        // Parsing and layout (including the external Graphviz process) run on
+        // a worker thread so a pathological diagram cannot hang the server.
+        Future<byte[]> task = executor.submit(() -> doRender(source, format));
+        try {
+            return task.get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            task.cancel(true);
+            throw new IOException(
+                "rendering timed out after " + RENDER_TIMEOUT_SECONDS + " seconds");
+        } catch (InterruptedException e) {
+            task.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new IOException("rendering was interrupted");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) {
+                throw io;
+            }
+            if (cause instanceof RuntimeException runtime) {
+                throw runtime;
+            }
+            throw new IOException(cause);
+        }
+    }
+
+    private byte[] doRender(String source, FileFormat format) throws IOException {
         SourceStringReader reader = new SourceStringReader(source);
         List<BlockUml> blocks = reader.getBlocks();
         if (blocks.isEmpty()) {
             throw new IllegalArgumentException(
                 "no diagram found (missing @startuml/@enduml?)");
+        }
+        if (blocks.size() > 1) {
+            throw new IllegalArgumentException(
+                "source contains " + blocks.size() + " diagrams; send exactly one "
+                    + "@startuml/@enduml block per call");
         }
 
         Diagram diagram = blocks.get(0).getDiagram();
