@@ -1,0 +1,294 @@
+app:
+  description: 'A sample chat app for evaluating the PlantUML MCP server via Docker
+    MCP Gateway. Describe the diagram you want in natural language, and an agent
+    generates PlantUML source and renders it as PNG (default) or SVG using the
+    render_png / render_svg MCP tools. Supports sequence, class, use case, activity,
+    state, component, and ER diagrams, Gantt charts, mind maps, and more. On rendering
+    errors, the agent reads the error message and retries with a corrected source
+    (up to 3 attempts).'
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  icon_type: emoji
+  mode: advanced-chat
+  name: plantuml-mit eval
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - remote_url
+      - local_file
+      enabled: true
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      number_limits: 3
+    opening_statement: 'Hello! I am your PlantUML diagramming assistant 📊
+
+
+      Describe the diagram you want to create, and I will build it with PlantUML
+      and return it as an SVG (or PNG).
+
+
+      Supported diagrams: sequence, class, use case, activity, state, component,
+      and ER diagrams, Gantt charts, mind maps, and more.
+
+
+      For example, try asking: "Create a sequence diagram of a user logging in and
+      receiving a token." Even if you do not specify a diagram type, I will pick
+      the best format based on the content.
+
+      '
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - Create a sequence diagram of a user logging in and receiving an auth token
+    - Create a class diagram for an e-commerce site covering orders, payment, and
+      shipping
+    - Create a state diagram from member registration to account deletion
+    - Turn a web app approval workflow into an activity diagram
+    - Create an ER diagram for a blog system (users, posts, comments, tags)
+    - Create a component diagram of a microservices architecture as PNG
+    - Create a two-week Gantt chart leading up to a new feature release
+    - Create a mind map on the theme of "project management"
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: agent
+      id: 1786200670439-source-1786202014830-target
+      source: '1786200670439'
+      sourceHandle: source
+      target: '1786202014830'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: agent
+        targetType: answer
+      id: 1786202014830-source-answer-target
+      source: '1786202014830'
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: User Input
+        type: start
+        variables: []
+      height: 73
+      id: '1786200670439'
+      position:
+        x: 75.45285035682815
+        y: 261
+      positionAbsolute:
+        x: 75.45285035682815
+        y: 261
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: 'You are a PlantUML diagram creation assistant. You create appropriate
+              PlantUML source from the user''s instructions and ALWAYS render it
+              with a tool before returning the result.
+
+
+              ## Tool selection (most important)
+
+              - render_png: [Default] Always call this when creating a diagram. The
+              returned image is automatically attached to the answer
+
+              - render_svg: Use only when the user explicitly asks for SVG
+
+
+              ## Procedure
+
+              1. Determine the diagram type from the user''s request (sequence diagram,
+              class diagram, use case diagram, activity diagram, state diagram, component
+              diagram, ER diagram, Gantt chart, mind map, JSON/YAML visualization,
+              etc.)
+
+              2. Create the PlantUML source. Always start with @startuml and end
+              with @enduml (@startjson for JSON, @startmindmap for mind maps)
+
+              3. [Required] Call render_png (render_svg only when SVG is explicitly
+              requested). Never finish by only writing the source
+
+              4. If the tool returns an error, read the error message (with line
+              numbers), fix the source, and run it again. After 3 failures, present
+              the error and the source and ask the user for confirmation
+
+
+              ## Diagramming rules
+
+              - If the diagram type is unspecified, choose the best type based on
+              the content and briefly explain your choice
+
+              - Fill in ambiguous parts of the request with common sense, and clearly
+              point out what you filled in
+
+              - If the user writes in Japanese, create labels in Japanese as well
+              (Noto Sans CJK for gothic and Noto Serif CJK JP for mincho are bundled).
+              If the user asks for a serif (mincho) style, add skinparam defaultFontName
+              "Noto Serif CJK JP" at the top of the source
+
+              - Keep the source within 100,000 characters
+
+
+              ## Output format
+
+              - Include an explanation and the PlantUML source used for rendering
+              (in a ```plantuml code block) in the answer body
+
+              - Images are attached automatically from the tool result, so embedding
+              them in the body (![...](data:...) or copying Base64) is prohibited
+
+              - When render_svg is used, the SVG file is attached automatically.
+              Copying the SVG content into the body is prohibited
+
+              '
+          model:
+            type: constant
+            value:
+              completion_params: {}
+              mode: chat
+              model: anthropic/claude-sonnet-4.6
+              model_type: llm
+              provider: langgenius/openrouter/openrouter
+              type: model-selector
+          query:
+            type: constant
+            value: '{{#sys.query#}}
+
+              {{#sys.files#}}'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: Render PlantUML source as PNG and return Base64.
+              parameters:
+                source:
+                  auto: 1
+                  value: null
+              plugin_id: ''
+              provider_name: mcp-gateway
+              provider_show_name: mcp-gateway
+              settings: {}
+              tool_description: Render PlantUML source as PNG and return Base64.
+              tool_label: render_png
+              tool_name: render_png
+              type: mcp
+            - enabled: true
+              extra:
+                description: Render PlantUML source as SVG.
+              parameters:
+                source:
+                  auto: 1
+                  value: null
+              plugin_id: ''
+              provider_name: mcp-gateway
+              provider_show_name: mcp-gateway
+              settings: {}
+              tool_description: Render PlantUML source as SVG.
+              tool_label: render_svg
+              tool_name: render_svg
+              type: mcp
+        agent_strategy_label: FunctionCalling
+        agent_strategy_name: function_calling
+        agent_strategy_provider_name: langgenius/agent/agent
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.42@2ae22966e893dced869cf04dba918eff6c14c05a3c3d7f04c2ed4f7da825b67f
+        selected: false
+        title: Agent
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: '1786202014830'
+      position:
+        x: 381
+        y: 282
+      positionAbsolute:
+        x: 381
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        answer: '{{#1786202014830.text#}}
+
+          {{#1786202014830.files#}}'
+        selected: false
+        title: Answer
+        type: answer
+        variables: []
+      height: 102
+      id: answer
+      position:
+        x: 679
+        y: 282
+      positionAbsolute:
+        x: 679
+        y: 282
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    viewport:
+      x: -28.106341701962037
+      y: 20.103860266558286
+      zoom: 1.3195079271274526
+  rag_pipeline_variables: []
