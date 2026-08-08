@@ -1,0 +1,18 @@
+# Automated dependency update PRs:
+# - maven: plantuml-mit / MCP SDK version bumps in pom.xml
+# - docker: base image updates (maven, eclipse-temurin) in the Dockerfile
+# - github-actions: action version updates in the workflows
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

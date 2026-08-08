@@ -1,0 +1,18 @@
+name: plantuml
+# Official catalog (Docker-built): hosted in Docker Hub's mcp/ namespace.
+# The project is MIT-licensed, so Docker-built submission (Option A) is available.
+# To use a self-built image instead, replace with your published image reference.
+image: mcp/plantuml
+type: server
+meta:
+  category: productivity
+  tags:
+    - plantuml
+    - uml
+    - diagrams
+about:
+  title: PlantUML
+  icon: https://avatars.githubusercontent.com/u/33107703?s=200&v=4
+  description: Render PlantUML source to SVG or PNG through Model Context Protocol.
+source:
+  project: https://github.com/potofo/plantuml-mcp-server

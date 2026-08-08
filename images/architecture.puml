@@ -1,0 +1,22 @@
+@startuml
+title PlantUML MCP Architecture
+
+actor Client
+
+node "Docker MCP Gateway" as GW
+
+package "Single Docker Container" {
+  component "Java MCP Server\n(stdio)" as MCP
+  component "PlantUML core\n(plantuml-mit, in-process)" as PUML
+  component "Graphviz dot\n(EPL-1.0, external process)" as DOT
+}
+
+Client --> GW : Streamable HTTP
+GW --> MCP : stdio
+MCP --> PUML : PlantUML core API
+PUML --> DOT : subprocess\n(diagram layout)
+PUML --> MCP : SVG / PNG
+MCP --> GW
+GW --> Client
+
+@enduml

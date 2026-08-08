@@ -1,0 +1,19 @@
+@startuml
+title Render UML Sequence
+
+actor Client
+participant Gateway
+participant "Java MCP Server" as MCP
+participant "PlantUML core\n(plantuml-mit)" as PUML
+participant "Graphviz dot" as DOT
+
+Client -> Gateway : MCP Tool Request
+Gateway -> MCP : stdio
+MCP -> PUML : PlantUML core API\n(in-process)
+PUML -> DOT : subprocess (layout)
+DOT --> PUML : layout result
+PUML --> MCP : SVG / PNG
+MCP --> Gateway : MCP Result
+Gateway --> Client : SVG / PNG
+
+@enduml

@@ -1,0 +1,32 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+# Smoke test output (generated locally, see research/windows-build-remote-gateway-test.md)
+smoketest_out/
+
+# Exported container images (generated locally, see research/wsl-build-image-transfer-test.md)
+containder/
+
+# Local dev catalog for docker mcp catalog import (per-developer, not distributed)
+catalog.local.yaml
+
+# Logs
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

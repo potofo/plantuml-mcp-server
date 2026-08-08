@@ -1,0 +1,41 @@
+# CI: verifies that the Maven build and the Docker image build succeed
+# on every push and pull request. No image is published here — publishing
+# happens only in the tag-driven release workflow.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Maven build
+        run: mvn -q -DskipTests package
+
+      - name: Docker build (single arch, no push)
+        run: docker build -t plantuml-mcp:ci .
+
+      - name: Smoke test - render a diagram in the container
+        run: |
+          printf '@startuml\nAlice -> Bob : hello\n@enduml\n' > smoke.puml
+          docker run --rm -i --entrypoint java plantuml-mcp:ci \
+            -Djava.awt.headless=true \
+            -cp /opt/plantuml-mcp/plantuml-mcp.jar \
+            net.sourceforge.plantuml.Run -tsvg -charset UTF-8 -pipe < smoke.puml > smoke.svg
+          grep -q "<svg" smoke.svg
