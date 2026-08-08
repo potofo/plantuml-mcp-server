@@ -37,6 +37,14 @@ go version                    # Go 1.24+
 task --version                # Task (taskfile.dev)
 ```
 
+さらに、GitHub APIのレート制限を避けるためトークンをexportしておく
+(`task create` / `task catalog` はGitHub APIを呼び、未認証だと
+`invalid character '<'` のようなJSONパースエラーで失敗することがある):
+
+```bash
+export GITHUB_TOKEN=$(gh auth token)
+```
+
 マシン要件: Docker Engineが動作するLinux(またはWSL2)。
 レジストリの `task` ツール群はローカルでコンテナのビルド・実行を行います。
 
@@ -82,8 +90,18 @@ fork済みの場合、`gh repo fork` は既存forkを再利用します。先に
 task create -- --category productivity https://github.com/potofo/plantuml-mcp-server
 ```
 
-期待結果: `servers/plantuml/server.yaml` が作成される。ツールはソース
-リポジトリのDockerfileと `server.yaml` を読んでデフォルト値を埋めます。
+期待結果: ツール検出のためにイメージがビルドされ(`2 tools found.` と
+表示される)、`servers/plantuml/server.yaml` が作成される。
+
+**注意**: `task create` はソースリポジトリの参照マニフェストを
+**読みません**。生成物には次の問題が含まれるため、Step 3での修正が
+必須です:
+
+- `about.title` / `about.description` が `TODO` のまま
+- `about.icon` がリポジトリオーナーのアバターを指す(指定アイコンではない)
+- 不要な `config:` セクション(TODO付き)が付く
+
+一方、`source.commit` のピンは正しく付与されます(残すこと)。
 
 **フォールバック** — `task create` が失敗した場合は、ソースリポジトリ
 ルートの参照マニフェストに基づき `servers/plantuml/server.yaml` を
@@ -107,20 +125,42 @@ about:
     Community project, not affiliated with or endorsed by the PlantUML project.
 source:
   project: https://github.com/potofo/plantuml-mcp-server
+  commit: <デフォルトブランチHEADのSHA>  # gh api repos/potofo/plantuml-mcp-server/commits/main --jq .sha
 ```
 
-### Step 3 — 生成されたエントリのレビュー
+commitピンはレジストリの慣例です(既存エントリの大半が採用)。
+手書きする場合も必ず含めること。
 
-`servers/plantuml/server.yaml` を入力情報の表と照合する:
+### Step 3 — 生成されたエントリの修正
+
+`servers/plantuml/server.yaml` を入力情報の表と参照マニフェストに
+合わせて**編集**する(照合だけでは不十分 — `task create` の生成物は
+TODOを含む):
 
 - [ ] `name` が `plantuml`(またはフォールバック名)である
 - [ ] `meta.category` が `productivity` である
-- [ ] `about.description` に非公認である旨の一文が含まれる
-- [ ] `about.icon` が設定され、URLが画像を返す
+- [ ] `about.title` を `PlantUML` にする(生成値: `Plantuml (TODO)`)
+- [ ] `about.description` を参照マニフェストの文に置き換える
+      (非公認である旨の一文を含むこと)
+- [ ] `about.icon` を入力情報の表のURLに置き換え(生成値はリポジトリ
+      オーナーのアバター)、URLが画像を返すことを確認する
 - [ ] `source.project` がソースリポジトリを指している
-- [ ] `config` / `secrets` セクションが**ない**(不要のため)
+- [ ] `source.commit` のピンが残っている
+- [ ] `config:` セクションを**削除**する(不要のため。生成物には
+      TODO付きで含まれる)
 
 ### Step 4 — ローカル検証
+
+まずCIに最も近いローカルチェックである `task validate` を実行する:
+
+```bash
+task validate -- --name plantuml
+```
+
+引数は必ず `--name plantuml` 形式にする(`-- plantuml` では空のnameと
+解釈されて失敗する)。期待結果: 名前・ディレクトリ・タイトル・YAML
+整形・commitピン・シークレット・config env・ライセンス・アイコン等の
+全チェックが ✅ になる。
 
 ```bash
 task build -- --tools plantuml
@@ -133,6 +173,16 @@ task build -- --tools plantuml
 ```bash
 task catalog -- plantuml
 docker mcp catalog import $PWD/catalogs/plantuml/catalog.yaml
+```
+
+**既知の問題**: 環境によっては `task catalog` が
+`invalid character '<' looking for beginning of value` で失敗する。
+これは hub.docker.com のCloudflareがGoのHTTP/2クライアントの
+TLSフィンガープリントをブロックしてHTMLを返すためで、エントリ起因
+ではない(既存エントリでも再現する)。HTTP/1.1を強制すれば回避できる:
+
+```bash
+GODEBUG=http2client=0 task catalog -- plantuml
 ```
 
 任意のエンドツーエンド確認: サーバーを有効化しゲートウェイ経由でツールを

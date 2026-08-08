@@ -37,6 +37,14 @@ go version                    # Go 1.24+
 task --version                # Task (taskfile.dev)
 ```
 
+Also export a GitHub token to avoid API rate limits (`task create` /
+`task catalog` call the GitHub API; unauthenticated calls can fail with
+JSON parse errors like `invalid character '<'`):
+
+```bash
+export GITHUB_TOKEN=$(gh auth token)
+```
+
 Machine requirements: Linux (or WSL2) with a working Docker Engine.
 The registry's `task` tooling builds and runs containers locally.
 
@@ -83,8 +91,18 @@ Non-interactive generation (do NOT use `task wizard`; it is interactive):
 task create -- --category productivity https://github.com/potofo/plantuml-mcp-server
 ```
 
-Expected result: `servers/plantuml/server.yaml` is created. The tool
-reads the source repo's Dockerfile and `server.yaml` to fill defaults.
+Expected result: the image is built for tool discovery (the output
+says `2 tools found.`) and `servers/plantuml/server.yaml` is created.
+
+**Caution**: `task create` does **not** read the reference manifest in
+the source repo. The generated entry contains the following problems,
+so the edits in Step 3 are mandatory:
+
+- `about.title` / `about.description` are left as `TODO`
+- `about.icon` points at the repo owner's avatar (not the intended icon)
+- a superfluous `config:` section (with a TODO) is added
+
+The `source.commit` pin, however, is filled in correctly (keep it).
 
 **Fallback** — if `task create` fails, write `servers/plantuml/server.yaml`
 by hand, based on the reference manifest at the source repo root:
@@ -107,20 +125,43 @@ about:
     Community project, not affiliated with or endorsed by the PlantUML project.
 source:
   project: https://github.com/potofo/plantuml-mcp-server
+  commit: <HEAD SHA of the default branch>  # gh api repos/potofo/plantuml-mcp-server/commits/main --jq .sha
 ```
 
-### Step 3 — Review the generated entry
+Pinning the commit is the registry convention (most existing entries
+do); always include it when writing the entry by hand.
 
-Check `servers/plantuml/server.yaml` against the Inputs table:
+### Step 3 — Fix the generated entry
+
+**Edit** `servers/plantuml/server.yaml` to match the Inputs table and
+the reference manifest (reviewing alone is not enough — the
+`task create` output contains TODOs):
 
 - [ ] `name` is `plantuml` (or the fallback name)
 - [ ] `meta.category` is `productivity`
-- [ ] `about.description` includes the non-affiliation sentence
-- [ ] `about.icon` is set and the URL returns an image
+- [ ] set `about.title` to `PlantUML` (generated value: `Plantuml (TODO)`)
+- [ ] replace `about.description` with the reference manifest text
+      (it must include the non-affiliation sentence)
+- [ ] replace `about.icon` with the URL from the Inputs table (the
+      generated value is the repo owner's avatar); confirm the URL
+      returns an image
 - [ ] `source.project` points to the source repository
-- [ ] There is **no** `config` / `secrets` section (none is needed)
+- [ ] the `source.commit` pin is still present
+- [ ] **delete** the `config:` section (none is needed; the generated
+      entry contains one with a TODO)
 
 ### Step 4 — Validate locally
+
+First run `task validate`, the closest local equivalent of the CI checks:
+
+```bash
+task validate -- --name plantuml
+```
+
+The argument must use the `--name plantuml` form (`-- plantuml` is
+interpreted as an empty name and fails). Expected: every check — name,
+directory, title, YAML formatting, commit pin, secrets, config env,
+license, icon, etc. — reports ✅.
 
 ```bash
 task build -- --tools plantuml
@@ -133,6 +174,17 @@ missing, the container failed to start — inspect the build output.
 ```bash
 task catalog -- plantuml
 docker mcp catalog import $PWD/catalogs/plantuml/catalog.yaml
+```
+
+**Known issue**: in some environments `task catalog` fails with
+`invalid character '<' looking for beginning of value`. This happens
+because Cloudflare in front of hub.docker.com blocks the Go HTTP/2
+client's TLS fingerprint and returns HTML; it is not caused by the
+entry (existing entries reproduce it too). Forcing HTTP/1.1 works
+around it:
+
+```bash
+GODEBUG=http2client=0 task catalog -- plantuml
 ```
 
 Optional end-to-end check: enable the server and call a tool through
