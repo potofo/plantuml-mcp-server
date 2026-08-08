@@ -79,5 +79,14 @@ IMAGE=plantuml-mcp:ci bash test/acceptance-test.sh
 検証方法を付記した `# SKIP` 行として出力されるため、TAP 出力には
 常にすべての要件 ID が現れます。
 
+## テスト結果の所在
+
+- **[RESULTS.md](RESULTS.md)** — スクリプトの実行のたびに再生成される
+  Markdown サマリ(日時・イメージ・コミット・要件別の結果表)。
+  リポジトリにコミットされているものは直近の検証実行のスナップショット。
+- **CI アーティファクト `test-results`** — CI 実行のたびに生の TAP 出力
+  (`acceptance-tap.txt`)と `RESULTS.md` をアップロード。ステップが
+  失敗した場合も、実行の Summary ページからダウンロードできます。
+
 依存: `bash`・`docker`・`jq`・`base64`・`od`
 (いずれも GitHub `ubuntu-latest` ランナーに標準搭載)。

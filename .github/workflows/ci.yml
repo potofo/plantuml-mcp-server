@@ -32,4 +32,13 @@ jobs:
         run: docker build -t plantuml-mcp:ci .
 
       - name: Acceptance tests (EARS requirements, see test/ACCEPTANCE.md)
-        run: IMAGE=plantuml-mcp:ci bash test/acceptance-test.sh
+        run: IMAGE=plantuml-mcp:ci bash test/acceptance-test.sh | tee acceptance-tap.txt
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            acceptance-tap.txt
+            test/RESULTS.md
