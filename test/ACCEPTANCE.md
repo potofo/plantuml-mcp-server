@@ -40,7 +40,7 @@ Japanese version: [ACCEPTANCE.ja-JP.md](ACCEPTANCE.ja-JP.md)
 
 | ID | Pattern | Requirement | Verification |
 | --- | --- | --- | --- |
-| REQ-FUN-001 | Event-driven | When `render_svg` is called with valid PlantUML source, the server shall return an embedded resource with MIME type `image/svg+xml` containing the rendered SVG, plus a short status text, and shall not inline the SVG text into the text content. | Automated |
+| REQ-FUN-001 | Event-driven | When `render_svg` is called with valid PlantUML source, the server shall return three content items: an embedded resource with MIME type `image/svg+xml` containing the rendered SVG (a downloadable file on clients that map blobs to files), an inline PNG preview image (for clients that discard blob resources), and a status text that does not claim a file is attached and instructs the caller not to fabricate download links. The SVG text shall not be inlined into the text content, and the SVG shall never be sent as `image` content. | Automated |
 | REQ-FUN-002 | Event-driven | When `render_png` is called with valid PlantUML source, the server shall return an image content item with MIME type `image/png` containing a valid PNG. | Automated |
 | REQ-FUN-003 | Event-driven | When the source requires Graphviz layout (e.g. a class diagram), the server shall render it using the Graphviz bundled in the image. | Automated |
 | REQ-FUN-004 | Event-driven | When the source contains CJK (e.g. Japanese) labels, the server shall render them using the bundled Noto CJK fonts, such that the labels appear in the output. | Automated |

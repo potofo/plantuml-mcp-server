@@ -46,11 +46,12 @@ public final class Main {
         String plantUmlVersion = net.sourceforge.plantuml.version.Version.versionString();
 
         Tool svgTool = Tool.builder("render_svg", McpJsonDefaults.getMapper(), SOURCE_SCHEMA)
-            .description("Render PlantUML source as a downloadable SVG file. Use ONLY "
-                + "when the user explicitly asks for SVG format. To show a diagram "
-                + "to the user, use render_png instead. Renderer: PlantUML "
-                + plantUmlVersion + " (MIT build; ditaa and LaTeX math unavailable); "
-                + "write syntax compatible with this version.")
+            .description("Render PlantUML source as a downloadable SVG file (with an "
+                + "inline PNG preview). Use ONLY when the user explicitly asks for "
+                + "SVG format. To show a diagram to the user, use render_png "
+                + "instead. Renderer: PlantUML " + plantUmlVersion
+                + " (MIT build; ditaa and LaTeX math unavailable); write syntax "
+                + "compatible with this version.")
             .build();
 
         Tool pngTool = Tool.builder("render_png", McpJsonDefaults.getMapper(), SOURCE_SCHEMA)
@@ -68,10 +69,22 @@ public final class Main {
                 try {
                     String source = requireSource(request.arguments());
                     String svg = plantUml.renderSvg(source);
-                    // Return the SVG as an embedded resource (downloadable file)
-                    // plus a short text status. Deliberately NOT returning the SVG
-                    // text inline: it would be injected into the calling LLM's
-                    // context and waste thousands of tokens for no benefit.
+                    String pngBase64 = Base64.getEncoder()
+                        .encodeToString(plantUml.renderPng(source));
+                    // Three content items, tuned for multi-client delivery through
+                    // the gateway (clientInfo cannot be used to branch — the
+                    // gateway reconnects upstream with its own identity):
+                    //  1. SVG as an embedded blob resource — becomes a downloadable
+                    //     file on platforms that map blobs to files (e.g. Dify).
+                    //     Deliberately NOT inlined as text: it would waste
+                    //     thousands of tokens in the calling LLM's context.
+                    //  2. PNG preview as image content — platforms that discard
+                    //     blob resources (e.g. LibreChat) still display the
+                    //     diagram inline. Never send SVG as type "image": LLM
+                    //     providers reject image/svg+xml payloads.
+                    //  3. Status text that must not claim an attachment exists —
+                    //     clients that drop the blob would otherwise lead the
+                    //     model to fabricate download links.
                     String blob = Base64.getEncoder().encodeToString(
                         svg.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                     var resource = new McpSchema.BlobResourceContents(
@@ -79,9 +92,14 @@ public final class Main {
                     return CallToolResult.builder()
                         .content(List.of(
                             new McpSchema.EmbeddedResource(null, resource),
+                            new McpSchema.ImageContent(null, pngBase64, "image/png"),
                             new McpSchema.TextContent(
-                                "SVG rendered successfully. The SVG file is attached "
-                                    + "to this result; do not reproduce its content.")))
+                                "PlantUML diagram rendered. A PNG preview is included "
+                                    + "inline. On some clients the SVG also appears as "
+                                    + "a downloadable file, but not on all - do not "
+                                    + "claim an SVG file is available unless the user "
+                                    + "confirms they can see it, and do not create or "
+                                    + "fabricate download links for the SVG.")))
                         .build();
                 } catch (Exception e) {
                     System.err.println("render_svg failed: " + e.getMessage());
