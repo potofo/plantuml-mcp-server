@@ -138,10 +138,15 @@ report REQ-FUN-005 "tool descriptions advertise the PlantUML version" $?
 rq 3 '(.result.isError != true)
       and .result.content[0].type == "resource"
       and .result.content[0].resource.mimeType == "image/svg+xml"
-      and (.result.content[1].type == "text")
-      and (.result.content[1].text | contains("<svg") | not)' \
+      and (.result.content[1].type == "image")
+      and .result.content[1].mimeType == "image/png"
+      and (.result.content[2].type == "text")
+      and (.result.content[2].text | contains("<svg") | not)
+      and (.result.content[2].text | contains("attached") | not)
+      and (.result.content[2].text | ascii_downcase
+           | contains("do not create or fabricate download links"))' \
   && svg_of 3 | grep -q "<svg"
-report REQ-FUN-001 "render_svg returns an SVG embedded resource (not inlined)" $?
+report REQ-FUN-001 "render_svg returns SVG resource + PNG preview + non-misleading text" $?
 
 png_magic="$(jq -r 'select(.id == 4) | .result.content[0].data' "$RESP" | base64 -d | head -c 4 | od -An -tx1 | tr -d ' \n')"
 rq 4 '(.result.isError != true) and .result.content[0].type == "image" and .result.content[0].mimeType == "image/png"' \
