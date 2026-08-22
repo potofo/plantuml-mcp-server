@@ -10,7 +10,7 @@
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <mcp.version>2.0.0</mcp.version>
+    <mcp.version>2.0.1</mcp.version>
     <!-- MIT-licensed PlantUML variant; same source and release cadence as the GPL artifact. -->
     <plantuml.version>1.2026.6</plantuml.version>
   </properties>
